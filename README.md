@@ -4,7 +4,8 @@
 rank_bm25, jsonschema, langchain, langchain-openai
 
 ## How to use
-First download stopwords-ko.txt and put in root directory
+First get api key ans put in .env file
+Second download stopwords-ko.txt and put in root directory
 
 Then run 
 ```
