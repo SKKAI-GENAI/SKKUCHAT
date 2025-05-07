@@ -1,0 +1,8 @@
+# ignore .json files
+*.json
+
+# ignore .env api key files
+*.env
+
+# ignore .txt stopwords file
+*.txt

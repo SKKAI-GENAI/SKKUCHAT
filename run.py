@@ -1,52 +1,51 @@
-import crawling, generate_query, bm25
+import crawling, query_generation, bm25
 
 import numpy as np
 from sklearn.metrics import accuracy_score
 import argparse, sys
 
-def 
+# 데이터 크롤링
+# 쿼리 생성
+def prepare():
+    crawling.crawl_skku_notice()
+    query_generation.generate_query(crawling.get_data())
 
-def eval():
-    k = 3               # hit을 판단할 top-k
-    hit_cnt = 0
-    total_cnt = 0
+# hit rate 계산
+def eval_bm25(k):
+    data = crawling.get_data()
+    query = query_generation.get_query()
+    model = bm25.BM25(data, query)
 
-    query = generate_query.get_query()
+    hit_rate = model.get_hitrate(k)
 
-    for id in generated_query.keys():
-        for query in generated_query[id]['query_list']:
-            tokenized_query = preprocess(query)
-            doc_scores = bm25.get_scores(tokenized_query)
+    print(f"hit rate: {hit_rate}")
 
-            pred = []
-            pred_idx = np.argsort(doc_scores)[-k:]
+def main(args):
+    if args.mode == 'prepare':              # prepare
+        prepare()           
+    if args.model == 'bm25':    
+        if args.mode == 'eval':             # bm25 eval
+            eval_bm25(args.k)
+        elif args.mode == 'conversation':   # bm25 demo
+            # demo
+            exit(1)
+        else:
+            print('invalid argument')
+            exit(1)
 
-            for idx in pred_idx:
-                pred.append(corpus_data_mapping[idx])
-            
-            if id in pred:
-                hit_cnt += 1
-            total_cnt += 1
-
-    print(f"hit_cnt {hit_cnt}")
-    print(f"total_cnt {total_cnt}")
-    print(f"hit_rate {hit_cnt/total_cnt}")
-
-
-def main(mode):
-    if mode == 'eval':
-
-
-
+# 사용법
+# python run.py -mode MODE -model MODEL -k K
+# python run.py -mode=MODE -model=MODEL -k=K
 if __name__ == '__main__' :
     parser = argparse.ArgumentParser()
-    parser.add_argument('-mode', help=' : running mode (eval, conversation)') 
-    
+    parser.add_argument('-mode', help=' : running mode (prepare, train, eval, conversation)') 
+    parser.add_argument('-model', help=' : select model (bm25)') 
+    parser.add_argument('-k', type=int, help=' : top-k in evaluation', default=3) 
 
+    # argument valid check
     args = parser.parse_args()
-
-    if args.mode not in ['eval', 'conversation']:
+    if args.mode not in ['prepare', 'train', 'eval', 'conversation']:           
         print('invalid argument')
         exit(1)
 
-    main(args.mode)
+    main(args)
