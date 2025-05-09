@@ -6,7 +6,7 @@ import pytesseract  #pip install pytesseract 필요
 import io
 import requests
 
-from urllib.parse import urljoin    #5/9 이미지 추출 위함
+from urllib.parse import urljoin
 from PIL import Image   #pip install pillow 필요
 from bs4 import BeautifulSoup as bs
 
