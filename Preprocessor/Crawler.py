@@ -16,14 +16,13 @@ from zoneinfo import ZoneInfo
 def preprocess_image_for_ocr(img_bytes):
     img = Image.open(io.BytesIO(img_bytes))
 
-    # 이미지 크기 확인
-    max_width = 2000
-    max_height = 3000
+    # 이미지 크기 설정
+    max_width = 750
 
-    if img.width > max_width or img.height > max_height:
-        ratio = min(max_width / img.width, max_height / img.height)
+    if img.width > max_width:
+        ratio = max_width / img.width
         new_size = (int(img.width * ratio), int(img.height * ratio))
-        img = img.resize(new_size, Image.LANCZOS)  #이미지 축소
+        img = img.resize(new_size, Image.LANCZOS)  #이미지 축소, LANCZOS 필터 사용해 품질 유지
 
     return img
 
@@ -40,7 +39,9 @@ def crawl_skku_notices():
 
     data = []
 
-    for pg in range(10):
+    #이미지 크기가 너무 큰 경우 Dos 공격 가능성 경고 메세지 발생
+    #응답시간이 너무 긴 경우 connection timeout 발생
+    for pg in range(43):
         # 공지사항 리스트 가져오기
         response = requests.get(URL + query_list(pg), headers=headers)
         html = bs(response.text, "html.parser")
@@ -80,7 +81,7 @@ def crawl_skku_notices():
                             # 이미지 전처리 후 OCR
                             img_response = requests.get(url, headers=headers)
                             img = preprocess_image_for_ocr(img_response.content)
-                            text = pytesseract.image_to_string(img, lang="kor", config="--oem 3 --psm 6")
+                            text = pytesseract.image_to_string(img, lang="kor+eng", config="--oem 3 --psm 6")
                             img_text += text.strip()
                             """
                             # 이미지 OCR
@@ -92,7 +93,7 @@ def crawl_skku_notices():
                         else:
                             continue
                     except Exception as e:
-                        print(f"OCR 실패: {url} → {e}")
+                        print(f"OCR 실패: {url} -> {e}")
             # 기존 content에 이미지에서 추출한 텍스트 덧붙이기
             content = content + img_text
         
