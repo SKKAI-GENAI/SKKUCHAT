@@ -30,6 +30,9 @@ llm = ChatOpenAI(model="gpt-4o-mini").with_structured_output(response_schema)
 chain = prompt | llm
 
 def generate_query(data):
+    if os.path.isfile('query_gen.json'):
+        return
+
     # chain 호출
     generated_query = []
     print("generating query...")

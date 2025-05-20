@@ -28,6 +28,7 @@ class BM25:
             id = q_dict['id']
             q_list = q_dict['query']
             for q in q_list:
+                # preprocess and get score
                 p_q = preprocess.process(q)
                 doc_scores = self.bm25.get_scores(p_q)
 
@@ -44,3 +45,17 @@ class BM25:
         print(hit_cnt)
         print(total_cnt)
         return hit_cnt/total_cnt
+    
+    def retrieve(q):
+        p_q = preprocess.process(q)
+        doc_scores = self.bm25.get_scores(p_q)
+
+        pred = []
+        pred_idx = np.argsort(doc_scores)[-k:]
+
+        for idx in pred_idx:
+            pred.append(self.corpus_id_mapping[idx])
+
+        
+
+

@@ -1,4 +1,5 @@
 import re
+import os
 import json
 import requests
 from bs4 import BeautifulSoup as bs
@@ -8,6 +9,9 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 def crawl_skku_notice():
+    if os.path.isfile('skku_notices.json'):
+        return
+
     NOW_KST = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M:%S")
     URL = "https://www.skku.edu/skku/campus/skk_comm/notice01.do"
     query_list = lambda pg: f"?mode=list&&articleLimit=10&article.offset={pg*10}"
