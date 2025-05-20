@@ -1,6 +1,7 @@
 import re
 import json
 import requests
+import os
 
 from tqdm import tqdm
 from bs4 import BeautifulSoup as bs
@@ -22,6 +23,16 @@ headers = {
 
 data = []
 
+# Load existing JSON data
+if os.path.exists("skku_notices.json"):
+    with open("skku_notices.json", "r", encoding="utf-8") as f:
+        existing_data = json.load(f)
+else:
+    existing_data = []
+
+existing_ids = {item["id"] for item in existing_data}
+updated_count = 0
+
 for pg in tqdm(range(100)):
     # 공지사항 리스트 가져오기
     response = requests.get(URL + query_list(pg), headers=headers)
@@ -36,6 +47,10 @@ for pg in tqdm(range(100)):
         url = notice.select_one("a")["href"]
         id = re.search(r"articleNo=(\d+)", url).group(1)
         title = notice.select_one("a").get_text(strip=True)
+
+        if id in existing_ids:
+            tqdm.write(f"[Update Stopped] Notice ID={id} already exists.")
+            break
 
         info = notice.select_one("dd.board-list-content-info")
         created_date = info.select("ul li")[2].get_text(strip=True)
@@ -77,9 +92,20 @@ for pg in tqdm(range(100)):
                 "department": "홈페이지 공지사항",
             }
         )
+        updated_count += 1
 
+    if updated_count > 0:
+        tqdm.write(f"[Update Completed] {updated_count} new notices added.")
+        break
 
-json_data = json.dumps(data, indent=4, ensure_ascii=False)
+# Merge new data with existing data
+merged_data = data + existing_data
+if len(data) > 0:
+    # Remove the oldest notices if the total exceeds the limit
+    merged_data = sorted(merged_data, key=lambda x: x["created_date"], reverse=True)
+    if len(merged_data) > len(existing_data):
+        merged_data = merged_data[:len(existing_data)]
 
+# Save updated JSON data
 with open("skku_notices.json", "w", encoding="utf-8") as f:
-    f.write(json_data)
+    json.dump(merged_data, f, indent=4, ensure_ascii=False)

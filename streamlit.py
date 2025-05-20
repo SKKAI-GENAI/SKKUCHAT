@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 import os
 import openai
 from retrieval import SparseRetrieval
+import subprocess
+import json
 
 # 환경 변수 로드
 load_dotenv()
@@ -20,6 +22,21 @@ if "chat" not in st.session_state:
 # Retriever 캐시로 불러오기
 @st.cache_resource
 def load_retriever():
+    try:
+        subprocess.run(["python3", "crawl_notice.py"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error while running crawl_notice.py: {e}")
+        return []
+    try:
+        with open("skku_notices.json", "r", encoding="utf-8") as f:
+            notices = json.load(f)
+    except FileNotFoundError:
+        print("skku_notices.json not found.")
+        return []
+    except json.JSONDecodeError as e:
+        print(f"Error decoding skku_notices.json: {e}")
+        return []
+
     retriever = SparseRetrieval(tokenize_fn=Okt().morphs, context_path="skku_notices.json")
     retriever.get_sparse_embedding()
     return retriever
