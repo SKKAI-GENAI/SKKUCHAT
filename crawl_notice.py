@@ -32,9 +32,12 @@ else:
 
 existing_ids = {item["id"] for item in existing_data}
 updated_count = 0
+flag = 0
 
 for pg in tqdm(range(100)):
     # 공지사항 리스트 가져오기
+    if flag == 1:
+        break
     response = requests.get(URL + query_list(pg), headers=headers)
     html = bs(response.text, "html.parser")
 
@@ -50,6 +53,7 @@ for pg in tqdm(range(100)):
 
         if id in existing_ids:
             tqdm.write(f"[Update Stopped] Notice ID={id} already exists.")
+            flag = 1
             break
 
         info = notice.select_one("dd.board-list-content-info")

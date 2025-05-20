@@ -74,6 +74,7 @@ if prompt:
     with st.chat_message("assistant"):
         st.write("🔎 관련 공지를 찾았어요:\n")
         st.write(title_url_text)
+        st.write(scores)
 
     st.session_state["chat"].append(("assistant", "🔎 관련 공지를 찾았어요:\n" + title_url_text))
 

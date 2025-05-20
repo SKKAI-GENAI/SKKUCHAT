@@ -66,21 +66,13 @@ class SparseRetrieval:
             return (doc_scores, retrieved_ids)
 
     def get_relevant_doc(self, query: str, topk: int) -> Tuple[List[float], List[int]]:
-        # ---------------------------- vanilla ---------------------------
         tokenized_query = self.tokenize_fn(query)
         doc_scores = self.bm25.get_scores(tokenized_query)
-        doc_indices = np.argsort(doc_scores)[::-1][:topk]
-        return doc_scores[doc_indices].tolist(), doc_indices.tolist()
-    
-        # --------------------------- rerank --------------------------------
-        #tokenized_query = self.tokenize_fn(query)
-        #doc_scores = self.bm25.get_scores(tokenized_query)
-        #doc_indices = np.argsort(doc_scores)[::-1][:topk*2]
-          
-        #initial_contexts = [self.contexts[i] for i in doc_indices]
-        #selected_scores = [doc_scores[i] for i in range(len(doc_indices))]
-        #reranked_scores, reranked_contexts = self.rerank(query, initial_contexts, selected_scores, topk)
-        #reranked_indices = [self.contexts.index(context) for context in reranked_contexts]
-        
-        #return reranked_scores.tolist(), reranked_indices
-    
+
+        # Softmax 계산
+        exp_scores = np.exp(doc_scores)
+        softmax_scores = exp_scores / np.sum(exp_scores)
+
+        # 상위 topk 결과 선택
+        doc_indices = np.argsort(softmax_scores)[::-1][:topk]
+        return softmax_scores[doc_indices].tolist(), doc_indices.tolist()
