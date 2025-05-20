@@ -1,10 +1,14 @@
 import re
 import json
 import requests
+
+from tqdm import tqdm
 from bs4 import BeautifulSoup as bs
 
 from datetime import datetime
 from zoneinfo import ZoneInfo
+
+from preprocessing import Preprocess_img
 
 NOW_KST = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M:%S")
 URL = "https://www.skku.edu/skku/campus/skk_comm/notice01.do"
@@ -18,7 +22,7 @@ headers = {
 
 data = []
 
-for pg in range(10):
+for pg in tqdm(range(1)):
     # 공지사항 리스트 가져오기
     response = requests.get(URL + query_list(pg), headers=headers)
     html = bs(response.text, "html.parser")
@@ -43,6 +47,24 @@ for pg in range(10):
         pre = subhtml.select_one("pre.pre")
         content = pre.get_text(strip=True) if pre is not None else ""
 
+        # 공지사항 게시물 이미지 내 텍스트 추출(OCR)
+        dd = subhtml.select_one("dd")
+        image_tags = dd.select("img") if dd else []
+        image_url = ["https://www.skku.edu" + img["src"] for img in image_tags if img.has_attr("src")]
+        image_url = image_url if image_url else None
+
+        if (image_url is not None):
+            for url in image_url:
+                if url.endswith((".jpg", ".jpeg", ".png", ".bmp")):
+                    try:
+                        img_response = requests.get(url, headers=headers)
+                        img_text = Preprocess_img(img_response.content)
+                        content += img_text
+                    except Exception as e:
+                        tqdm.write(
+                            f"[OCR Failed] Notice ID={id} | URL={url} -> Exception: {e}"
+                        )
+
         data.append(
             {
                 "id": id,
@@ -52,6 +74,7 @@ for pg in range(10):
                 "created_date": created_date,  # 공지 작성일
                 "crawled_date": NOW_KST,  # 크롤링된 시간
                 "department": "홈페이지 공지사항",
+                "image_url": image_url,  # 이미지 URL
             }
         )
 
