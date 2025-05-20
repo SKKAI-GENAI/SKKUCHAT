@@ -22,7 +22,7 @@ headers = {
 
 data = []
 
-for pg in tqdm(range(1)):
+for pg in tqdm(range(100)):
     # 공지사항 리스트 가져오기
     response = requests.get(URL + query_list(pg), headers=headers)
     html = bs(response.text, "html.parser")
@@ -70,11 +70,11 @@ for pg in tqdm(range(1)):
                 "id": id,
                 "title": title,
                 "content": content,
+                "image_url": image_url,  # 이미지 URL
                 "category": category,  # [채용/모집], [행사/세미나] 등
                 "created_date": created_date,  # 공지 작성일
                 "crawled_date": NOW_KST,  # 크롤링된 시간
                 "department": "홈페이지 공지사항",
-                "image_url": image_url,  # 이미지 URL
             }
         )
 
