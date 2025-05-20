@@ -4,7 +4,7 @@ from PIL import Image
 
 import pytesseract
 
-from eunjeon import Mecab
+# from eunjeon import Mecab
 # mecab = Mecab()
 
 with open("stopwords-ko.txt", "r", encoding="utf-8") as f:

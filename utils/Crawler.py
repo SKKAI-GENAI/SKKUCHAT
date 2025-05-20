@@ -5,7 +5,9 @@ import requests
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from tqdm import tqdm
 from bs4 import BeautifulSoup as bs
+
 from Preprocessor import Preprocess_img
 
 
@@ -33,7 +35,7 @@ def Crawler(max_pages: int, img_OCR: bool = True):
     }
 
     data = {}
-    for page in range(max_pages):
+    for page in tqdm(range(max_pages), desc="Crawling in progress"):
         # 공지사항 리스트 가져오기
         response = requests.get(URL + query_list(page), headers=headers)
         html = bs(response.text, "html.parser")
@@ -73,7 +75,7 @@ def Crawler(max_pages: int, img_OCR: bool = True):
                             content += img_text
                         except Exception as e:
                             # 이미지 크기가 너무 큰 경우 Dos 공격 가능성 경고 메세지 발생
-                            print(f"OCR failed: {url} -> {e}")
+                            tqdm.write(f"OCR failed: {url} -> {e}")
 
             data[id] = {
                 "id": id,
