@@ -1,11 +1,12 @@
 import re
 import io
+import warnings
 from PIL import Image
 
 import pytesseract
 
-# from eunjeon import Mecab
-# mecab = Mecab()
+from konlpy.tag import Mecab
+mecab = Mecab()
 
 with open("stopwords-ko.txt", "r", encoding="utf-8") as f:
     stopwords = f.read().splitlines()
@@ -14,8 +15,8 @@ with open("stopwords-ko.txt", "r", encoding="utf-8") as f:
 def Preprocess_text(text):
     text = re.sub(r"[^a-zA-Z0-9가-힣\s]", " ", text) # 특수 문자 제거
     text = re.sub(r"\s+", " ", text).strip() # 공백 정리
-    # tokenized_text = mecab.morphs(text)
-    # tokenized_text = " ".join([word for word in tokenized_text if word not in stopwords])
+    text = mecab.morphs(text) # 한국어 형태소 분석기
+    text = " ".join([word for word in text if word not in stopwords]) # 불용어 제거
 
     return text
 
@@ -29,6 +30,9 @@ def Preprocess_img(img_bytes):
     Returns:
         str: 이미지에서 추출한 텍스트.
     """
+    # Dos 공격 가능성 경고 메세지(이미지 크기가 너무 클 때) 무시
+    # 신뢰할 수 있는 출처(성균관대학교 홈페이지)에서 이미지를 받아오므로
+    warnings.simplefilter("ignore", Image.DecompressionBombWarning)
 
     img = Image.open(io.BytesIO(img_bytes))
 

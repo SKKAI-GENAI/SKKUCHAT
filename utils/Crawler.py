@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 from tqdm import tqdm
 from bs4 import BeautifulSoup as bs
 
-from Preprocessor import Preprocess_img
+from Preprocessor import Preprocess_text, Preprocess_img
 
 
 def Crawler(max_pages: int, img_OCR: bool = True):
@@ -34,7 +34,7 @@ def Crawler(max_pages: int, img_OCR: bool = True):
         "Referer": "https://www.skku.edu/",
     }
 
-    data = {}
+    data = []
     for page in tqdm(range(max_pages), desc="Crawling in progress"):
         # 공지사항 리스트 가져오기
         response = requests.get(URL + query_list(page), headers=headers)
@@ -60,10 +60,13 @@ def Crawler(max_pages: int, img_OCR: bool = True):
             pre = subhtml.select_one("pre.pre")
             content = pre.get_text(strip=True) if pre is not None else ""
 
+            div = subhtml.select_one("div.fr-view")
+            content += " ".join(p.get_text(strip=True) for p in div.find_all("p")) if div is not None else ""
+
             # 공지사항 게시물 이미지 내 텍스트 추출(OCR)
             dd = subhtml.select_one("dd")
             image_tags = dd.select("img") if dd else []
-            image_url = ["https://www.skku.edu/" + img["src"] for img in image_tags if img.has_attr("src")]
+            image_url = ["https://www.skku.edu" + img["src"] for img in image_tags if img.has_attr("src")]
             image_url = image_url if image_url else None
 
             if (img_OCR and image_url is not None):
@@ -74,20 +77,27 @@ def Crawler(max_pages: int, img_OCR: bool = True):
                             img_text = Preprocess_img(img_response.content)
                             content += img_text
                         except Exception as e:
-                            # 이미지 크기가 너무 큰 경우 Dos 공격 가능성 경고 메세지 발생
-                            tqdm.write(f"OCR failed: {url} -> {e}")
+                            tqdm.write(
+                                f"[OCR Failed] Notice ID={id} | URL={url} -> Exception: {e}"
+                            )
 
-            data[id] = {
-                "id": id,
-                "title": title,
-                "content": content,
-                "image_url": image_url,  # 이미지 URL
-                "category": category,    # [채용/모집], [행사/세미나] 등
-                "due_date": None,
-                "created_date": created_date,  # 공지 작성일
-                "crawled_date": NOW_KST,       # 크롤링된 시간
-                "department": "홈페이지 공지사항",
-            }
+            # 텍스트 전처리
+            title = Preprocess_text(title)
+            content = Preprocess_text(content)
+
+            data.append(
+                {
+                    "id": id,
+                    "title": title,
+                    "content": content,
+                    "category": category,  # [채용/모집], [행사/세미나] 등
+                    "due_date": None,
+                    "created_date": created_date,  # 공지 작성일
+                    "crawled_date": NOW_KST,       # 크롤링된 시간
+                    "department": "홈페이지 공지사항",
+                    "image_url": image_url,  # 이미지 URL
+                }
+            )
 
     # 크롤링 한 내용을 JSON으로 저장
     with open("skku_notices.json", "w", encoding="utf-8") as f:
