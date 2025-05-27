@@ -1,0 +1,15 @@
+requests
+tqdm
+beautifulsoup4
+pillow
+pytesseract
+streamlit
+konlpy
+python-dotenv
+openai
+numpy
+pandas
+datasets
+rank-bm25
+transformers
+torch
