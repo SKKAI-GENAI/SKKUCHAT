@@ -1,4 +1,4 @@
-import preprocess
+import SKKUCHAT.Preprocessor.okt as okt
 
 import numpy as np
 from tqdm import tqdm
@@ -14,7 +14,7 @@ class BM25:
         self.corpus = []
         self.corpus_id_mapping = {}
         for i, e in enumerate(self.data):
-            self.corpus.append(preprocess.process(e['content']))
+            self.corpus.append(okt.process(e['content']))
             self.corpus_id_mapping[i] = e['id']
         
         self.bm25 = BM25Okapi(self.corpus)
@@ -28,7 +28,7 @@ class BM25:
             id = q_dict['id']
             q_list = q_dict['query']
             for q in q_list:
-                p_q = preprocess.process(q)
+                p_q = okt.process(q)
                 doc_scores = self.bm25.get_scores(p_q)
 
                 pred = []
