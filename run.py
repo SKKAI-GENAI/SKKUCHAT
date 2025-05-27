@@ -23,7 +23,7 @@ def eval_bm25(k):
 def prepare_rag():
     prepare_bm25()
     response_generation.generate_response(crawling.get_data(), query_generation.get_query())
-    build_dataset(crawling.get_data(), response_generation.get_response())
+    build_dataset.build_dataset(crawling.get_data(), response_generation.get_response())
 
 def main(args):   
     if args.model == 'bm25':

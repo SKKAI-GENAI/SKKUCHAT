@@ -9,7 +9,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 def crawl_skku_notice():
-    if os.path.isfile('skku_notices.json'):
+    if os.path.isfile('Dataset/skku_notices.json'):
         return
 
     NOW_KST = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M:%S")
@@ -65,11 +65,11 @@ def crawl_skku_notice():
 
     json_data = json.dumps(data, indent=4, ensure_ascii=False)
 
-    with open("skku_notices.json", "w", encoding="utf-8") as f:
+    with open("Dataset/skku_notices.json", "w", encoding="utf-8") as f:
         f.write(json_data)
 
 def get_data():
-    with open('skku_notices.json', 'r', encoding='utf-8') as f:
+    with open('Dataset/skku_notices.json', 'r', encoding='utf-8') as f:
         data = json.load(f)
     
     if not data:
