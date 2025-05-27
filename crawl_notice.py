@@ -31,7 +31,6 @@ else:
     existing_data = []
 
 existing_ids = {item["id"] for item in existing_data}
-updated_count = 0
 flag = 0
 
 for pg in tqdm(range(100)):
@@ -51,13 +50,21 @@ for pg in tqdm(range(100)):
         id = re.search(r"articleNo=(\d+)", url).group(1)
         title = notice.select_one("a").get_text(strip=True)
 
-        if id in existing_ids:
-            tqdm.write(f"[Update Stopped] Notice ID={id} already exists.")
-            flag = 1
-            break
-
         info = notice.select_one("dd.board-list-content-info")
         created_date = info.select("ul li")[2].get_text(strip=True)
+
+        if id in existing_ids:  # created 날짜가 동일한지 확인 / 업데이트
+            for i in range(len(existing_data)):
+                if existing_data[i]["id"] == id:
+                    if existing_data[i]["created_date"] == created_date:
+                        tqdm.write(f"[Update Stopped] Notice ID={id} already exists.")
+                        flag = 1
+                    else:
+                        del existing_data[i]
+                    break
+
+        if flag == 1:
+            break
 
         # 공지사항 게시물 가져오기
         subresponse = requests.get(URL + query_view(id), headers=headers)
@@ -96,19 +103,17 @@ for pg in tqdm(range(100)):
                 "department": "홈페이지 공지사항",
             }
         )
-        updated_count += 1
 
-    if updated_count > 0:
-        tqdm.write(f"[Update Completed] {updated_count} new notices added.")
-        break
+if len(data) > 0:
+    tqdm.write(f"[Update Completed] {len(data)} new notices added.")
 
 # Merge new data with existing data
 merged_data = data + existing_data
 if len(data) > 0:
-    # Remove the oldest notices if the total exceeds the limit
+    # Remove the oldest notices if the total exceeds the limit (1000)
     merged_data = sorted(merged_data, key=lambda x: x["created_date"], reverse=True)
-    if len(merged_data) > len(existing_data):
-        merged_data = merged_data[:len(existing_data)]
+    if len(merged_data) > 1000:
+        merged_data = merged_data[:1000]
 
 # Save updated JSON data
 with open("skku_notices.json", "w", encoding="utf-8") as f:

@@ -9,6 +9,10 @@ from datasets import Dataset
 from tqdm.auto import tqdm
 from rank_bm25 import BM25Okapi
 
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import torch
+
+
 def timer(name):
     t0 = time.time()
     yield
@@ -37,42 +41,75 @@ class SparseRetrieval:
                     self.titles.append(v.get("title", "제목 없음"))
                     self.urls.append(v.get("url", ""))
 
-        
         # 텍스트 토크나이징
         self.tokenized_contexts = [tokenize_fn(doc) for doc in self.contexts]
         # BM25 객체 생성
         self.bm25 = BM25Okapi(self.tokenized_contexts)
 
-        self.p_embedding = None  # get_sparse_embedding()로 생성합니다
-        self.indexer = None  # build_faiss()로 생성합니다.
+        self.p_embedding = None
+        self.indexer = None
         self.embedding_ready = False
-        
-    
+
+        # ko-reranker 모델 및 토크나이저 로딩
+        self.reranker_tokenizer = AutoTokenizer.from_pretrained("Dongjin-kr/ko-reranker")
+        self.reranker_model = AutoModelForSequenceClassification.from_pretrained("Dongjin-kr/ko-reranker")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.reranker_model.to(self.device)
+
     def get_sparse_embedding(self) -> NoReturn:
         print("BM25Okapi 모델 사용 중, 별도의 임베딩이 필요하지 않습니다.")
-        self.embedding_ready = True  # 임베딩이 준비되었다는 플래그 설정
-
-    def retrieve(
-        self, query_or_dataset: Union[str, Dataset], topk: Optional[int] = 1
-    ) -> Union[Tuple[List, List], pd.DataFrame]:
-        assert self.embedding_ready, "get_sparse_embedding() 메소드를 먼저 수행해줘야합니다."
-
-        if isinstance(query_or_dataset, str):
-            doc_scores, doc_indices = self.get_relevant_doc(query_or_dataset, topk)
-
-            # id 반환을 위해 doc_indices를 self.ids로 매핑
-            retrieved_ids = [self.notice_ids[i] for i in doc_indices]
-
-            return (doc_scores, retrieved_ids)
+        self.embedding_ready = True
 
     def get_relevant_doc(self, query: str, topk: int) -> Tuple[List[float], List[int]]:
         tokenized_query = self.tokenize_fn(query)
         doc_scores = self.bm25.get_scores(tokenized_query)
 
-        # Softmax 계산
         exp_scores = np.exp(doc_scores)
         softmax_scores = exp_scores / np.sum(exp_scores)
 
-        # 상위 topk 결과 선택
         doc_indices = np.argsort(softmax_scores)[::-1][:topk]
         return softmax_scores[doc_indices].tolist(), doc_indices.tolist()
+
+    def _rerank(self, query_doc_pairs: List[Tuple[str, str]]) -> List[float]:
+        inputs = self.reranker_tokenizer(
+            [q for q, d in query_doc_pairs],
+            [d for q, d in query_doc_pairs],
+            padding=True,
+            truncation=True,
+            return_tensors="pt"
+        ).to(self.device)
+
+        with torch.no_grad():
+            outputs = self.reranker_model(**inputs)
+            scores = outputs.logits.squeeze(-1).cpu().tolist()
+
+        return scores
+
+    def retrieve(
+        self, query_or_dataset: Union[str, Dataset], topk: Optional[int] = 1,
+        threshold: Optional[float] = -4  # rerank 점수 기준
+    ) -> Union[Tuple[List, List], pd.DataFrame]:
+        assert self.embedding_ready, "get_sparse_embedding() 메소드를 먼저 수행해줘야 합니다."
+
+        if isinstance(query_or_dataset, str):
+            initial_topk = topk * 5
+            doc_scores, doc_indices = self.get_relevant_doc(query_or_dataset, initial_topk)
+
+            query = query_or_dataset
+            passages = [self.contexts[i] for i in doc_indices]
+            pairs = [(query, passage) for passage in passages]
+
+            rerank_scores = self._rerank(pairs)
+            sorted_indices = np.argsort(rerank_scores)[::-1]
+
+            # top-k 중 threshold 이상만 필터링
+            filtered = [(rerank_scores[i], doc_indices[i]) for i in sorted_indices if rerank_scores[i] >= threshold]
+            if len(filtered) == 0:
+                return [], []
+
+            #final = filtered[:topk]
+            final_scores = [score for score, _ in filtered]
+            final_doc_indices = [idx for _, idx in filtered]
+            retrieved_ids = [self.notice_ids[i] for i in final_doc_indices]
+
+            return final_scores, retrieved_ids

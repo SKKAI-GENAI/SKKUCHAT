@@ -63,35 +63,45 @@ if prompt:
 
     # 관련 공지 추출
     scores, notice_ids = retriever.retrieve(prompt, topk=3)
-    title_url_pairs = []
-    for nid in notice_ids:
-        idx = retriever.notice_ids.index(nid)
-        title = retriever.titles[idx]
-        url = f"https://www.skku.edu/skku/campus/skk_comm/notice01.do?mode=view&articleNo={int(nid)}"
-        title_url_pairs.append((title, url))
-    title_url_text = "\n".join([f"{i+1}. {title} {url}" for i, (title, url) in enumerate(title_url_pairs)])
+    
+    if not scores or not notice_ids:  # scores와 notice_ids가 비어있는 경우 처리
+        with st.chat_message("assistant"):
+            st.write("❗️ 관련 공지를 찾지 못했어요. 아래와 같은 경우 공지사항을 제대로 찾을 수 없어요.")
+            st.write("1. 입력된 질문이 비어있어요.")
+            st.write("2. 질문이 너무 짧거나 명확하지 않아요.")
+            st.write("3. 너무 포괄적인 질문이에요. 조금 더 자세하게 질문해주세요!")
+            st.write("4. 성균관대학교 공지사항과 무관한 질문이에요.")
+        st.session_state["chat"].append(("assistant", "❗️ 관련 공지를 찾지 못했어요. 아래와 같은 경우 공지사항을 제대로 찾을 수 없어요:\n1. 입력된 질문이 비어있어요.\n2. 질문이 너무 짧거나 명확하지 않아요.\n3. 너무 포괄적인 질문이에요. 조금 더 자세하게 질문해주세요!\n4. 성균관대학교 공지사항과 무관한 질문이에요."))
+    else:
+        title_url_pairs = []
+        for nid in notice_ids:
+            idx = retriever.notice_ids.index(nid)
+            title = retriever.titles[idx]
+            url = f"https://www.skku.edu/skku/campus/skk_comm/notice01.do?mode=view&articleNo={int(nid)}"
+            title_url_pairs.append((title, url))
+        title_url_text = "\n".join([f"{i+1}. {title} {url}" for i, (title, url) in enumerate(title_url_pairs)])
 
-    with st.chat_message("assistant"):
-        st.write("🔎 관련 공지를 찾았어요:\n")
-        st.write(title_url_text)
-        st.write(scores)
+        with st.chat_message("assistant"):
+            st.write("🔎 관련 공지를 찾았어요:\n")
+            st.write(title_url_text)
+            #st.write(scores)
 
-    st.session_state["chat"].append(("assistant", "🔎 관련 공지를 찾았어요:\n" + title_url_text))
+        st.session_state["chat"].append(("assistant", "🔎 관련 공지를 찾았어요:\n" + title_url_text))
 
-    # GPT 응답 생성
-    with st.chat_message("assistant"):
-        with st.spinner("질문에 대한 답변을 생성 중입니다..."):
-            context_docs = [retriever.contexts[retriever.notice_ids.index(nid)] for nid in notice_ids]
-            joined_context = "\n\n".join(context_docs)
-            full_prompt = f"""아래는 성균관대학교 공지사항 중 관련된 내용입니다:\n\n{joined_context}\n\n사용자의 질문: "{prompt}"\n\n위 공지를 참고하여 정리된 답변을 제공해주세요."""
-            try:
-                response = openai.ChatCompletion.create(
-                    model="gpt-4o-mini",
-                    messages=[{"role": "user", "content": full_prompt}],
-                    temperature=0.5,
-                )
-                answer = response["choices"][0]["message"]["content"].strip()
-            except Exception as e:
-                answer = f"❗️OpenAI API 호출에 실패했습니다: {e}"
-            st.write(answer)
-            st.session_state["chat"].append(("assistant", answer))
+        # GPT 응답 생성
+        with st.chat_message("assistant"):
+            with st.spinner("질문에 대한 답변을 생성 중입니다..."):
+                context_docs = [retriever.contexts[retriever.notice_ids.index(nid)] for nid in notice_ids]
+                joined_context = "\n\n".join(context_docs)
+                full_prompt = f"""아래는 성균관대학교 공지사항 중 관련된 내용입니다:\n\n{joined_context}\n\n사용자의 질문: "{prompt}"\n\n위 공지를 참고하여 정리된 답변을 제공해주세요."""
+                try:
+                    response = openai.ChatCompletion.create(
+                        model="gpt-4o-mini",
+                        messages=[{"role": "user", "content": full_prompt}],
+                        temperature=0.5,
+                    )
+                    answer = response["choices"][0]["message"]["content"].strip()
+                except Exception as e:
+                    answer = f"❗️OpenAI API 호출에 실패했습니다: {e}"
+                st.write(answer)
+                st.session_state["chat"].append(("assistant", answer))
