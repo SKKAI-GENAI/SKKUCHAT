@@ -15,7 +15,7 @@ import pandas as pd
 
 #불용어 사전
 def load_stopwords():
-    f=open("stopwords-ko.txt", "r", encoding="utf-8")
+    f=open("Dataset/stopwords-ko.txt", "r", encoding="utf-8")
     stopwords_list = f.read().splitlines()
     return stopwords_list
 

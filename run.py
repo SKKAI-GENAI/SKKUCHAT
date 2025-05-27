@@ -1,4 +1,4 @@
-import crawling, query_generation, bm25, response_generation
+import crawling, query_generation, bm25, response_generation, build_dataset
 
 import numpy as np
 from sklearn.metrics import accuracy_score
@@ -23,6 +23,7 @@ def eval_bm25(k):
 def prepare_rag():
     prepare_bm25()
     response_generation.generate_response(crawling.get_data(), query_generation.get_query())
+    build_dataset(crawling.get_data(), response_generation.get_response())
 
 def main(args):   
     if args.model == 'bm25':

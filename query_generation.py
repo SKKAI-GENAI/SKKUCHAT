@@ -30,7 +30,7 @@ llm = ChatOpenAI(model="gpt-4o-mini").with_structured_output(response_schema)
 chain = prompt | llm
 
 def generate_query(data):
-    if os.path.isfile('query_gen.json'):
+    if os.path.isfile('Dataset/query_gen.json'):
         return
 
     # chain 호출
@@ -44,11 +44,11 @@ def generate_query(data):
 
     json_data = json.dumps(generated_query, indent=4, ensure_ascii=False)
 
-    with open("query_gen.json", "w", encoding="utf-8") as f:
+    with open("Dataset/query_gen.json", "w", encoding="utf-8") as f:
         f.write(json_data)
 
 def get_query():
-    with open('query_gen.json', 'r', encoding='utf-8') as f:
+    with open('Dataset/query_gen.json', 'r', encoding='utf-8') as f:
         generated_query = json.load(f)
     
     if not generated_query:

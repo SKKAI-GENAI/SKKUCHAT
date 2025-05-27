@@ -50,11 +50,21 @@ class BM25:
         p_q = preprocess.process(q)
         doc_scores = self.bm25.get_scores(p_q)
 
+        pred_idx = np.argsort(doc_scores)[-1]
+
+        return self.corpus_id_mapping[pred_idx]
+
+    def retrieve_topk(q, k):
+        p_q = preprocess.process(q)
+        doc_scores = self.bm25.get_scores(p_q)
+
         pred = []
         pred_idx = np.argsort(doc_scores)[-k:]
 
         for idx in pred_idx:
             pred.append(self.corpus_id_mapping[idx])
+
+        return pred
 
         
 
