@@ -41,7 +41,7 @@ class SKCTDataset(Dataset):
         self.k = k
 
         # data에 retrieved document k개 추가
-        self.bm25_model = bm25.BM25(crawling.get_data(), query_generation.get_query())
+        self.bm25_model = bm25.BM25(crawling.get_data(), query = query_generation.get_query())
 
         retrieved_document_topk = {}
         for e in data:

@@ -5,7 +5,7 @@ from tqdm import tqdm
 from rank_bm25 import BM25Okapi
 
 class BM25:
-    def __init__(self, data, query, k1=1.2, b=0.75):
+    def __init__(self, data, query=None, k1=1.2, b=0.75):
         self.data = data
         self.query = query
         self.k1 = k1
