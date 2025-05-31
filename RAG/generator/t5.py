@@ -7,7 +7,7 @@ class KoT5Generator:
 
     def generate_from_text(self, query):
         '''
-        query: input + retrive
+        query: input + retreive
         '''
 
         inputs = self.tokenizer(

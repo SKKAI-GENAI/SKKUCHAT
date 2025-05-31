@@ -6,3 +6,5 @@
 
 # ignore .txt stopwords file
 *.txt
+
+.DS_Store

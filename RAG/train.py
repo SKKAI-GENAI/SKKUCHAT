@@ -5,7 +5,7 @@ from transformers import AdamW, T5TokenizerFast, T5ForConditionalGeneration
 from dataset import SKCTDataset
 
 
-
+EPOCHS = 100
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 tokenizer = T5TokenizerFast.from_pretrained('paust/pko-t5-base')
@@ -16,7 +16,7 @@ loader = DataLoader(dataset, batch_size=8, shuffle=True)
 optimizer = AdamW(model.parameters(), lr=3e-5)
 model.train()
 
-for epoch in range(3):
+for epoch in range(EPOCHS):
     for step, batch in enumerate(loader):
         input_ids = batch['input_ids'].to(device)
         labels = batch['labels'].to(device)
