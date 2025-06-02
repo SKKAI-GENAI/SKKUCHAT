@@ -1,3 +1,4 @@
+#!/bin/bash
 sudo apt update
 
 # OCR용 패키지 설치
