@@ -5,7 +5,7 @@ from tqdm import tqdm
 from rank_bm25 import BM25Okapi
 
 class BM25:
-    def __init__(self, data, query, k1=1.2, b=0.75):
+    def __init__(self, data, query=None, k1=1.2, b=0.75):
         self.data = data
         self.query = query
         self.k1 = k1
@@ -50,11 +50,21 @@ class BM25:
         p_q = preprocess.process(q)
         doc_scores = self.bm25.get_scores(p_q)
 
+        pred_idx = np.argsort(doc_scores)[-1]
+
+        return self.corpus_id_mapping[pred_idx]
+
+    def retrieve_topk(q, k):
+        p_q = preprocess.process(q)
+        doc_scores = self.bm25.get_scores(p_q)
+
         pred = []
         pred_idx = np.argsort(doc_scores)[-k:]
 
         for idx in pred_idx:
             pred.append(self.corpus_id_mapping[idx])
+
+        return pred
 
         
 
