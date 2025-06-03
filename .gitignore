@@ -1,3 +1,10 @@
-__pycache__/
+# ignore .json files
+*.json
 
-.env
+# ignore .env api key files
+*.env
+
+# ignore .txt stopwords file
+*.txt
+
+.DS_Store
