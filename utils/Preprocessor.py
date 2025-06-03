@@ -8,7 +8,7 @@ import pytesseract
 from konlpy.tag import Mecab
 mecab = Mecab()
 
-with open("stopwords-ko.txt", "r", encoding="utf-8") as f:
+with open("./utils/stopwords-ko.txt", "r", encoding="utf-8") as f:
     stopwords = f.read().splitlines()
 
 

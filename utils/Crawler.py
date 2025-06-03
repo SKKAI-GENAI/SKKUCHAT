@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 from tqdm import tqdm
 from bs4 import BeautifulSoup as bs
 
-from Preprocessor import Preprocess_text, Preprocess_img
+from utils.Preprocessor import Preprocess_text, Preprocess_img
 
 
 def Crawler(max_pages: int, img_OCR: bool = True, save2DB: bool = True):
@@ -39,7 +39,7 @@ def Crawler(max_pages: int, img_OCR: bool = True, save2DB: bool = True):
 
     # 데이터베이스 연결 및 생성
     if save2DB:
-        conn = sqlite3.connect("../data/notices.db")
+        conn = sqlite3.connect("./data/notices.db")
         cur = conn.cursor()
         cur.execute(
             """
